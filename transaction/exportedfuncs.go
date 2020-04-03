@@ -44,7 +44,7 @@ func CreateAndSendNormalTx(rpcClient *rpcclient.HttpClient, privateKeyStr string
 	return txID, nil
 }
 
-func CreateAndSendTxRelayHeaderBlock(rpcClient *rpcclient.HttpClient, privateKeyStr string, bnbHeaderStr string, bnbHeaderBlockHeight int64, fee uint64) (string, error) {
+func CreateAndSendTxRelayBNBHeader(rpcClient *rpcclient.HttpClient, privateKeyStr string, bnbHeaderStr string, bnbHeaderBlockHeight int64, fee uint64) (string, error) {
 	// create sender private key from private key string
 	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
 	if err != nil {
@@ -59,6 +59,39 @@ func CreateAndSendTxRelayHeaderBlock(rpcClient *rpcclient.HttpClient, privateKey
 	// create metadata
 	meta, _ := metadata.NewRelayingHeader(
 		metadata.RelayingBNBHeaderMeta, paymentAddrStr, bnbHeaderStr, uint64(bnbHeaderBlockHeight))
+
+	// create tx
+	tx := new(Tx)
+	tx, err = tx.Init(
+		rpcClient, keyWallet, []*crypto.PaymentInfo{}, fee, false, meta, nil, txVersion)
+	if err != nil {
+		return "", err
+	}
+
+	// send tx
+	txID, err := tx.Send(rpcClient)
+	if err != nil {
+		return "", err
+	}
+
+	return txID, nil
+}
+
+func CreateAndSendTxRelayBTCHeader(rpcClient *rpcclient.HttpClient, privateKeyStr string, btcHeaderStr string, btcHeaderBlockHeight int64, fee uint64) (string, error) {
+	// create sender private key from private key string
+	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("Can not deserialize priavte key %v\n", err)
+	}
+	err = keyWallet.KeySet.InitFromPrivateKey(&keyWallet.KeySet.PrivateKey)
+	if err != nil {
+		return "", errors.New("sender private key is invalid")
+	}
+	paymentAddrStr := keyWallet.Base58CheckSerialize(wallet.PaymentAddressType)
+
+	// create metadata
+	meta, _ := metadata.NewRelayingHeader(
+		metadata.RelayingBTCHeaderMeta, paymentAddrStr, btcHeaderStr, uint64(btcHeaderBlockHeight))
 
 	// create tx
 	tx := new(Tx)
