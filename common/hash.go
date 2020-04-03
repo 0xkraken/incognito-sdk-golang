@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var InvalidMaxHashSizeErr = errors.New("invalid max hash size")
@@ -160,14 +159,6 @@ func (hashObj *Hash) Cmp(target *Hash) (int, error) {
 		}
 	}
 	return 0, nil
-}
-
-// Keccak256 returns Keccak256 hash as a Hash object for storing and comparing
-func Keccak256(data ...[]byte) Hash {
-	h := crypto.Keccak256(data...)
-	r := Hash{}
-	copy(r[:], h)
-	return r
 }
 
 func BytesToHash(b []byte) Hash {
