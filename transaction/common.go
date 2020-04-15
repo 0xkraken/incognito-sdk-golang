@@ -117,7 +117,6 @@ func EstimateTxSize(estimateTxSizeParam *EstimateTxSizeParam) uint64 {
 	return uint64(math.Ceil(float64(sizeTx) / 1024))
 }
 
-
 func NewPaymentInfoFromParam(paymentInfoParam map[string]uint64) ([]*crypto.PaymentInfo, error) {
 	result := make([]*crypto.PaymentInfo, 0)
 	for paymentAddrStr, amount := range paymentInfoParam {
@@ -400,5 +399,7 @@ func NewExchangeRateFromParam(params map[string]uint64) ([]*metadata.ExchangeRat
 
 	return result, nil
 }
+
+
 
 

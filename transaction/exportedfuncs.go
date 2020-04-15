@@ -114,7 +114,7 @@ func CreateAndSendTxPortalExchangeRate(rpcClient *rpcclient.HttpClient, privateK
 	// create sender private key from private key string
 	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
 	if err != nil {
-		return "", fmt.Errorf("Can not deserialize priavte key %v\n", err)
+		return "", fmt.Errorf("Can not deserialize private key %v\n", err)
 	}
 	err = keyWallet.KeySet.InitFromPrivateKey(&keyWallet.KeySet.PrivateKey)
 	if err != nil {
@@ -146,4 +146,25 @@ func CreateAndSendTxPortalExchangeRate(rpcClient *rpcclient.HttpClient, privateK
 	}
 
 	return txID, nil
+}
+
+func GetBalancePRV(rpcClient *rpcclient.HttpClient, privateKeyStr string) (uint64, error){
+	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
+	if err != nil {
+		return 0, fmt.Errorf("Can not deserialize private key %v\n", err)
+	}
+	err = keyWallet.KeySet.InitFromPrivateKey(&keyWallet.KeySet.PrivateKey)
+	if err != nil {
+		return 0, errors.New("sender private key is invalid")
+	}
+	utxos, err := GetUnspentOutputCoins(rpcClient, keyWallet)
+	if err != nil {
+		return 0, fmt.Errorf("Can not get utxos of account: %v\n", err)
+	}
+	balance := uint64(0)
+	for _, utxo := range utxos {
+		balance += utxo.CoinDetails.GetValue()
+	}
+
+	return balance, nil
 }

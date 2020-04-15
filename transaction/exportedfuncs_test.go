@@ -39,7 +39,7 @@ func TestCreateAndSendTxRelayHeaderBlock(t *testing.T) {
 }
 
 func TestCreateAndSendTxPortalExchangeRate(t *testing.T) {
-	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334 )
+	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334)
 
 	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
 	exchangeRateParam := map[string]uint64{
@@ -55,4 +55,17 @@ func TestCreateAndSendTxPortalExchangeRate(t *testing.T) {
 	}
 
 	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
+}
+
+func TestGetBalancePRV(t *testing.T) {
+	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334)
+	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
+
+	balance, err := GetBalancePRV(rpcClient, privateKeyStr)
+	if err != nil {
+		fmt.Printf("Error when get balance %v\n", err)
+		return
+	}
+
+	fmt.Printf("Balance %v", balance)
 }
