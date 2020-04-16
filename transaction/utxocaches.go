@@ -14,7 +14,7 @@ type UTXOCache struct {
 	mux sync.Mutex
 }
 
-var utxoCaches = &UTXOCache{}
+var utxoCaches = &UTXOCache{Caches: map[string]map[string]bool{}}
 
 func (c*UTXOCache) GetUTXOCaches() *UTXOCache {
 	c.mux.Lock()
