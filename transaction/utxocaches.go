@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"errors"
 	"fmt"
 	"github.com/0xkraken/incognito-sdk-golang/common"
 	"github.com/0xkraken/incognito-sdk-golang/common/base58"
@@ -44,8 +45,7 @@ func GetUTXOCacheByPublicKey(publicKey []byte) map[string]bool{
 	return caches[publicKeyStr]
 }
 
-func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
-	fmt.Printf("1111\n")
+func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) error {
 	caches := utxoCaches.GetUTXOCaches()
 	newMap := map[string]bool{}
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
@@ -55,12 +55,14 @@ func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 
 	for _, input := range inputCoins {
 		snStr := base58.Base58Check{}.Encode(input.CoinDetails.GetSerialNumber().ToBytesS(), common.ZeroByte)
+		if newMap[snStr] == true{
+			return errors.New("utxo is existed in cache, maybe it's used by other tx")
+		}
 		newMap[snStr] = true
 	}
 	caches[publicKeyStr] = newMap
-	fmt.Printf("2222\n")
 	utxoCaches.SetUTXOCaches(caches)
-	fmt.Printf("3333\n")
+	return nil
 }
 
 func RemoveUTXOsFromCache(publicKey []byte, inputCoins []*crypto.InputCoin) {

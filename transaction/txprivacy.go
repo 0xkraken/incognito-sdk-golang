@@ -83,18 +83,23 @@ func (tx *Tx) Init(
 	metaData metadata.Metadata,
 	info []byte,
 	txVersion int8) (*Tx, error) {
-	var err error
 	senderFullKey := keyWallet.KeySet
 	senderPrivateKey := senderFullKey.PrivateKey
 
-	// get input coins to spent
-	inputCoins, _, err := GetInputCoinsToCreateNormalTx(rpcClient, &senderPrivateKey, paymentInfo, fee)
-	if err != nil {
-		return nil, err
-	}
+	inputCoins := []*crypto.InputCoin{}
+	for {
+		// get input coins to spent
+		inputCoins, _, err := GetInputCoinsToCreateNormalTx(rpcClient, &senderPrivateKey, paymentInfo, fee)
+		if err != nil {
+			return nil, err
+		}
 
-	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
+		// cache utxos for this transaction
+		err = tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
+		if err == nil {
+			break
+		}
+	}
 
 	return tx.InitWithSpecificUTXOs(rpcClient, keyWallet, paymentInfo, fee, isPrivacy, metaData, info, txVersion, inputCoins)
 }
@@ -396,8 +401,8 @@ func (tx *Tx) Send(rpcClient *rpcclient.HttpClient) (string, error) {
 	return sendRawTxRes.Result.TxID, nil
 }
 
-func (tx *Tx) CacheUTXOs(publicKey []byte, inputCoins []*crypto.InputCoin) {
-	AddUTXOsToCache(publicKey, inputCoins)
+func (tx *Tx) CacheUTXOs(publicKey []byte, inputCoins []*crypto.InputCoin) error {
+	return AddUTXOsToCache(publicKey, inputCoins)
 }
 
 func (tx *Tx) UnCacheUTXOs(publicKey []byte) {
