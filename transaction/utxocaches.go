@@ -25,7 +25,7 @@ func (c*UTXOCache) GetUTXOCaches() map[string]map[string]bool {
 
 func (c*UTXOCache) SetUTXOCaches(utxoCache map[string]map[string]bool){
 	c.mux.Lock()
-	utxoCaches.Caches = utxoCache
+	c.Caches = utxoCache
 	//fmt.Printf("Sleeping...\n")
 	//time.Sleep(5*time.Second)
 	c.mux.Unlock()
