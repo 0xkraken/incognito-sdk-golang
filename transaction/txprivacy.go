@@ -87,9 +87,10 @@ func (tx *Tx) Init(
 	senderPrivateKey := senderFullKey.PrivateKey
 
 	inputCoins := []*crypto.InputCoin{}
+	var err error
 	for {
 		// get input coins to spent
-		inputCoins, _, err := GetInputCoinsToCreateNormalTx(rpcClient, &senderPrivateKey, paymentInfo, fee)
+		inputCoins, _, err = GetInputCoinsToCreateNormalTx(rpcClient, &senderPrivateKey, paymentInfo, fee)
 		if err != nil {
 			return nil, err
 		}
