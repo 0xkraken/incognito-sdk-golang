@@ -40,6 +40,8 @@ func CreateAndSendNormalTx(rpcClient *rpcclient.HttpClient, privateKeyStr string
 	if err != nil {
 		return "", err
 	}
+	// cache utxos for this transaction
+	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -73,6 +75,8 @@ func CreateAndSendTxRelayBNBHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 	if err != nil {
 		return "", err
 	}
+	// cache utxos for this transaction
+	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -106,6 +110,8 @@ func CreateAndSendTxRelayBTCHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 	if err != nil {
 		return "", err
 	}
+	// cache utxos for this transaction
+	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -144,6 +150,8 @@ func CreateAndSendTxPortalExchangeRate(rpcClient *rpcclient.HttpClient, privateK
 	if err != nil {
 		return "", err
 	}
+	// cache utxos for this transaction
+	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -167,4 +175,64 @@ func GetBalancePRV(rpcClient *rpcclient.HttpClient, privateKeyStr string) (uint6
 	}
 
 	return balance, nil
+}
+
+func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTXOs int) error {
+	// key wallet
+	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
+	if err != nil {
+		return fmt.Errorf("Can not deserialize private key %v\n", err)
+	}
+	err = keyWallet.KeySet.InitFromPrivateKey(&keyWallet.KeySet.PrivateKey)
+	if err != nil {
+		return errors.New("sender private key is invalid")
+	}
+
+	for {
+		// get utxos except spending utxos
+		utxos, err := GetUnspentOutputCoinsExceptSpendingUTXO(rpcClient, keyWallet)
+		if err != nil {
+			return fmt.Errorf("Error when get utxos: %v\n", err)
+		}
+
+		if len(utxos) >= minNumUTXOs {
+			fmt.Printf("Split uxtos completed. There are %v number of utxos\n", len(utxos))
+			fmt.Printf("List utxos after spliting: \n")
+			for i, utxo := range utxos {
+				fmt.Printf("utxo %v - Value %v\n", i, utxo.CoinDetails.GetValue())
+			}
+			return nil
+		}
+
+		if len(utxos) > 0 {
+			fmt.Printf("Len utxos before spliting : %v\n", len(utxos))
+		}
+
+		// for each utxo, divide the utxo into two utxos
+		for _, utxo := range utxos {
+			paymentInfos := []*crypto.PaymentInfo{
+				{
+					PaymentAddress: keyWallet.KeySet.PaymentAddress,
+					Amount: utxo.CoinDetails.GetValue() / 2,
+				},
+			}
+
+			inputCoins := []*crypto.InputCoin{utxo}
+			tx := new(Tx)
+			tx, err = tx.InitWithSpecificUTXOs(
+				rpcClient, keyWallet, paymentInfos, DefaultFee / 2, false, nil, nil, txVersion, inputCoins)
+			if err != nil {
+				return err
+			}
+
+			// send tx
+			txID, err := tx.Send(rpcClient)
+			if err != nil {
+				return err
+			}
+			// cache utxos for this transaction
+			tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
+			fmt.Printf("Split uxto with txID : %v\n", txID)
+		}
+	}
 }

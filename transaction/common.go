@@ -289,19 +289,46 @@ func GetUnspentOutputCoins(rpcClient *rpcclient.HttpClient, keyWallet *wallet.Ke
 	return utxos, nil
 }
 
+// GetUnspentOutputCoins return utxos of an account
+func GetUnspentOutputCoinsExceptSpendingUTXO(rpcClient *rpcclient.HttpClient, keyWallet *wallet.KeyWallet) ([]*crypto.InputCoin, error) {
+	// get unspent output coins from network
+	utxos, err := GetUnspentOutputCoins(rpcClient, keyWallet)
+	if err != nil {
+		return nil, err
+	}
+	inputCoins := ConvertOutputCoinToInputCoin(utxos)
+
+	// check and remove utxo cache (these utxos in txs that were confirmed)
+	CheckAndRemoveUTXOFromCache(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
+
+	// except spending utxos from unspent output coins
+	publicKey := keyWallet.KeySet.PaymentAddress.Pk
+	utxosInCache := GetUTXOCacheByPublicKey(publicKey)
+	for serialNumberStr, _ := range utxosInCache {
+		for i, inputCoin := range inputCoins {
+			snStrTmp := base58.Base58Check{}.Encode(inputCoin.CoinDetails.GetSerialNumber().ToBytesS(), common.ZeroByte)
+			if snStrTmp == serialNumberStr {
+				inputCoins = removeElementFromSlice(inputCoins, i)
+				break
+			}
+		}
+	}
+	return inputCoins, nil
+}
+
 // ChooseBestOutCoinsToSpent returns list of unspent coins for spending with amount
-func ChooseBestOutCoinsToSpent(utxos []*crypto.OutputCoin, amount uint64) (
-	resultOutputCoins []*crypto.OutputCoin,
-	remainOutputCoins []*crypto.OutputCoin,
+func ChooseBestOutCoinsToSpent(utxos []*crypto.InputCoin, amount uint64) (
+	resultOutputCoins []*crypto.InputCoin,
+	remainOutputCoins []*crypto.InputCoin,
 	totalResultOutputCoinAmount uint64, err error) {
 
-	resultOutputCoins = make([]*crypto.OutputCoin, 0)
-	remainOutputCoins = make([]*crypto.OutputCoin, 0)
+	resultOutputCoins = make([]*crypto.InputCoin, 0)
+	remainOutputCoins = make([]*crypto.InputCoin, 0)
 	totalResultOutputCoinAmount = uint64(0)
 
 	// either take the smallest coins, or a single largest one
-	var outCoinOverLimit *crypto.OutputCoin
-	outCoinsUnderLimit := make([]*crypto.OutputCoin, 0)
+	var outCoinOverLimit *crypto.InputCoin
+	outCoinsUnderLimit := make([]*crypto.InputCoin, 0)
 	for _, outCoin := range utxos {
 		if outCoin.CoinDetails.GetValue() < amount {
 			outCoinsUnderLimit = append(outCoinsUnderLimit, outCoin)
@@ -327,7 +354,7 @@ func ChooseBestOutCoinsToSpent(utxos []*crypto.OutputCoin, amount uint64) (
 	}
 	if outCoinOverLimit != nil && (outCoinOverLimit.CoinDetails.GetValue() > 2*amount || totalResultOutputCoinAmount < amount) {
 		remainOutputCoins = append(remainOutputCoins, resultOutputCoins...)
-		resultOutputCoins = []*crypto.OutputCoin{outCoinOverLimit}
+		resultOutputCoins = []*crypto.InputCoin{outCoinOverLimit}
 		totalResultOutputCoinAmount = outCoinOverLimit.CoinDetails.GetValue()
 	} else if outCoinOverLimit != nil {
 		remainOutputCoins = append(remainOutputCoins, outCoinOverLimit)
@@ -352,7 +379,7 @@ func GetInputCoinsToCreateNormalTx(
 		return nil, uint64(0), err
 	}
 
-	utxos, err := GetUnspentOutputCoins(rpcClient, keyWallet)
+	utxos, err := GetUnspentOutputCoinsExceptSpendingUTXO(rpcClient, keyWallet)
 	if err != nil {
 		return nil, uint64(0), err
 	}
@@ -382,9 +409,7 @@ func GetInputCoinsToCreateNormalTx(
 		})
 	}
 
-	// convert to inputcoins
-	inputCoins := ConvertOutputCoinToInputCoin(candidateOutputCoins)
-	return inputCoins, candidateOutputCoinAmount, nil
+	return candidateOutputCoins, candidateOutputCoinAmount, nil
 }
 
 func NewExchangeRateFromParam(params map[string]uint64) ([]*metadata.ExchangeRateInfo, error){

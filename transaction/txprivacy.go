@@ -84,10 +84,7 @@ func (tx *Tx) Init(
 	info []byte,
 	txVersion int8) (*Tx, error) {
 	var err error
-
-	// get public key last byte of sender
 	senderFullKey := keyWallet.KeySet
-	pkLastByteSender := senderFullKey.PaymentAddress.Pk[len(senderFullKey.PaymentAddress.Pk)-1]
 	senderPrivateKey := senderFullKey.PrivateKey
 
 	// get input coins to spent
@@ -95,6 +92,26 @@ func (tx *Tx) Init(
 	if err != nil {
 		return nil, err
 	}
+
+	return tx.InitWithSpecificUTXOs(rpcClient, keyWallet, paymentInfo, fee, isPrivacy, metaData, info, txVersion, inputCoins)
+}
+
+func (tx *Tx) InitWithSpecificUTXOs (
+	rpcClient *rpcclient.HttpClient,
+	keyWallet *wallet.KeyWallet,
+	paymentInfo []*crypto.PaymentInfo,
+	fee uint64,
+	isPrivacy bool,
+	metaData metadata.Metadata,
+	info []byte,
+	txVersion int8,
+	inputCoins []*crypto.InputCoin) (*Tx, error) {
+
+	var err error
+	// get public key last byte of sender
+	senderFullKey := keyWallet.KeySet
+	pkLastByteSender := senderFullKey.PaymentAddress.Pk[len(senderFullKey.PaymentAddress.Pk)-1]
+	senderPrivateKey := senderFullKey.PrivateKey
 
 	// check valid of input coins, payment infos
 	if len(inputCoins) > 255 {
@@ -376,3 +393,6 @@ func (tx *Tx) Send(rpcClient *rpcclient.HttpClient) (string, error) {
 	return sendRawTxRes.Result.TxID, nil
 }
 
+func (tx *Tx) CacheUTXOs(publicKey []byte) {
+	AddUTXOsToCache(publicKey, tx.Proof.GetInputCoins())
+}

@@ -35,6 +35,8 @@ func TestCreateAndSendTxRelayHeaderBlock(t *testing.T) {
 		return
 	}
 
+	fmt.Printf("cache after create tx: %v\n", GetUTXOCaches())
+
 	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
 }
 
@@ -68,4 +70,14 @@ func TestGetBalancePRV(t *testing.T) {
 	}
 
 	fmt.Printf("Balance %v", balance)
+}
+
+func TestSplitUTXOs(t *testing.T) {
+	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334)
+	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
+
+	err := SplitUTXOs(rpcClient, privateKeyStr, 300)
+	if err != nil {
+		fmt.Printf("ERR: %v\n", err)
+	}
 }
