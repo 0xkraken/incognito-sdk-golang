@@ -397,7 +397,7 @@ func (tx *Tx) Send(rpcClient *rpcclient.HttpClient) (string, error) {
 }
 
 func (tx *Tx) CacheUTXOs(publicKey []byte, inputCoins []*crypto.InputCoin) {
-	AddUTXOsToCache(publicKey, tx.Proof.GetInputCoins())
+	AddUTXOsToCache(publicKey, inputCoins)
 }
 
 func (tx *Tx) UnCacheUTXOs(publicKey []byte) {
