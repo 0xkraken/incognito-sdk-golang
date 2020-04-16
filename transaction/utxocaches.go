@@ -1,12 +1,10 @@
 package transaction
 
 import (
-	"fmt"
 	"github.com/0xkraken/incognito-sdk-golang/common"
 	"github.com/0xkraken/incognito-sdk-golang/common/base58"
 	"github.com/0xkraken/incognito-sdk-golang/crypto"
 	"sync"
-	"time"
 )
 
 type UTXOCache struct {
@@ -28,8 +26,8 @@ func (c*UTXOCache) GetUTXOCaches() *UTXOCache {
 func (c*UTXOCache) SetUTXOCaches(utxoCache *UTXOCache){
 	c.mux.Lock()
 	utxoCaches = utxoCache
-	fmt.Printf("Sleeping...\n")
-	time.Sleep(5*time.Second)
+	//fmt.Printf("Sleeping...\n")
+	//time.Sleep(5*time.Second)
 	c.mux.Unlock()
 }
 
