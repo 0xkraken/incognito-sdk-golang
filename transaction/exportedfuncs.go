@@ -70,8 +70,6 @@ func CreateAndSendTxRelayBNBHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 		return "", err
 	}
 
-	fmt.Printf("Utxo in tx: %v\n", tx.Proof.GetInputCoins()[0].CoinDetails.GetSerialNumber())
-
 	// send tx
 	txID, err := tx.Send(rpcClient)
 	if err != nil {
