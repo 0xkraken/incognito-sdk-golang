@@ -17,13 +17,11 @@ type UTXOCache struct {
 var utxoCaches = &UTXOCache{Caches: map[string]map[string]bool{}}
 
 func (c*UTXOCache) GetUTXOCaches() map[string]map[string]bool {
-	fmt.Printf("4444")
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	if c == nil {
 		return map[string]map[string]bool{}
 	}
-	fmt.Printf("5555 %v\n", c.Caches)
 	return c.Caches
 }
 
