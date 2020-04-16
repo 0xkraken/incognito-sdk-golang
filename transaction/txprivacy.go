@@ -94,7 +94,7 @@ func (tx *Tx) Init(
 	}
 
 	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
+	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
 
 	return tx.InitWithSpecificUTXOs(rpcClient, keyWallet, paymentInfo, fee, isPrivacy, metaData, info, txVersion, inputCoins)
 }
@@ -396,7 +396,7 @@ func (tx *Tx) Send(rpcClient *rpcclient.HttpClient) (string, error) {
 	return sendRawTxRes.Result.TxID, nil
 }
 
-func (tx *Tx) CacheUTXOs(publicKey []byte) {
+func (tx *Tx) CacheUTXOs(publicKey []byte, inputCoins []*crypto.InputCoin) {
 	AddUTXOsToCache(publicKey, tx.Proof.GetInputCoins())
 }
 

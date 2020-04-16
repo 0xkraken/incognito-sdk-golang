@@ -109,8 +109,6 @@ func CreateAndSendTxRelayBTCHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
-	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -229,7 +227,7 @@ func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTX
 				return err
 			}
 			// cache utxos for this transaction
-			tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
+			tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
 			fmt.Printf("Split uxto with txID : %v\n", txID)
 		}
 	}
