@@ -43,6 +43,7 @@ func GetUTXOCacheByPublicKey(publicKey []byte) map[string]bool{
 
 func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 	caches := utxoCaches.GetUTXOCaches()
+	utxoCaches.mux.Lock()
 	newMap := map[string]bool{}
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	if caches.Caches[publicKeyStr] != nil {
@@ -55,6 +56,7 @@ func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 	}
 	caches.Caches[publicKeyStr] = newMap
 	utxoCaches.SetUTXOCaches(caches)
+	utxoCaches.mux.Unlock()
 }
 
 func removeElementFromSlice(slice []*crypto.InputCoin, index int) []*crypto.InputCoin {
