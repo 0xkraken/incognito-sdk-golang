@@ -38,10 +38,9 @@ func CreateAndSendNormalTx(rpcClient *rpcclient.HttpClient, privateKeyStr string
 	// send tx
 	txID, err := tx.Send(rpcClient)
 	if err != nil {
+		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
-	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -73,10 +72,9 @@ func CreateAndSendTxRelayBNBHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 	// send tx
 	txID, err := tx.Send(rpcClient)
 	if err != nil {
+		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
-	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
@@ -108,6 +106,7 @@ func CreateAndSendTxRelayBTCHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 	// send tx
 	txID, err := tx.Send(rpcClient)
 	if err != nil {
+		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
 	// cache utxos for this transaction
@@ -148,10 +147,9 @@ func CreateAndSendTxPortalExchangeRate(rpcClient *rpcclient.HttpClient, privateK
 	// send tx
 	txID, err := tx.Send(rpcClient)
 	if err != nil {
+		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
-	// cache utxos for this transaction
-	tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 
 	return txID, nil
 }
