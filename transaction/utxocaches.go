@@ -1,30 +1,40 @@
 package transaction
 
 import (
+	"fmt"
 	"github.com/0xkraken/incognito-sdk-golang/common"
 	"github.com/0xkraken/incognito-sdk-golang/common/base58"
 	"github.com/0xkraken/incognito-sdk-golang/crypto"
+	"sync"
+	"time"
 )
 
 type UTXOCache struct {
 	Caches map[string]map[string]bool  // publicKey: serialnumber : interface
+	mux sync.Mutex
 }
 
 var utxoCaches *UTXOCache
 
-func GetUTXOCaches() *UTXOCache {
-	if utxoCaches == nil {
+func (c*UTXOCache) GetUTXOCaches() *UTXOCache {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	if c == nil {
 		return &UTXOCache{Caches: map[string]map[string]bool{}}
 	}
-	return utxoCaches
+	return c
 }
 
-func SetUTXOCaches(utxoCache *UTXOCache){
+func (c*UTXOCache) SetUTXOCaches(utxoCache *UTXOCache){
+	c.mux.Lock()
 	utxoCaches = utxoCache
+	fmt.Printf("Sleeping...\n")
+	time.Sleep(5*time.Second)
+	c.mux.Unlock()
 }
 
 func GetUTXOCacheByPublicKey(publicKey []byte) map[string]bool{
-	caches := GetUTXOCaches()
+	caches := utxoCaches.GetUTXOCaches()
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	if caches.Caches[publicKeyStr] == nil {
 		return map[string]bool{}
@@ -34,7 +44,7 @@ func GetUTXOCacheByPublicKey(publicKey []byte) map[string]bool{
 }
 
 func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
-	caches := GetUTXOCaches()
+	caches := utxoCaches.GetUTXOCaches()
 	newMap := map[string]bool{}
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	if caches.Caches[publicKeyStr] != nil {
@@ -46,7 +56,7 @@ func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 		newMap[snStr] = true
 	}
 	caches.Caches[publicKeyStr] = newMap
-	SetUTXOCaches(caches)
+	utxoCaches.SetUTXOCaches(caches)
 }
 
 func removeElementFromSlice(slice []*crypto.InputCoin, index int) []*crypto.InputCoin {
@@ -55,7 +65,7 @@ func removeElementFromSlice(slice []*crypto.InputCoin, index int) []*crypto.Inpu
 
 // remove utxo from cache when there is no the uxto in list unspent coins
 func CheckAndRemoveUTXOFromCache(publicKey []byte, utxos []*crypto.InputCoin){
-	caches := GetUTXOCaches()
+	caches := utxoCaches.GetUTXOCaches()
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	utxoCachesByPubKey := caches.Caches[publicKeyStr]
 	if utxoCachesByPubKey != nil {
@@ -73,6 +83,6 @@ func CheckAndRemoveUTXOFromCache(publicKey []byte, utxos []*crypto.InputCoin){
 			}
 		}
 		caches.Caches[publicKeyStr] = utxoCachesByPubKey
-		SetUTXOCaches(caches)
+		utxoCaches.SetUTXOCaches(caches)
 	}
 }

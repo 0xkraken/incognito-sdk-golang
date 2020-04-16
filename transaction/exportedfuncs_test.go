@@ -13,13 +13,21 @@ func TestCreateAndSendNormalTx(t *testing.T) {
 	paymentInfoParams := map[string]uint64{
 		"12Rwz4HXkVABgRnSb5Gfu1FaJ7auo3fLNXVGFhxx1dSytxHpWhbkimT1Mv5Z2oCMsssSXTVsapY8QGBZd2J4mPiCTzJAtMyCzb4dDcy" : 1000 * 1e9,
 	}
-	txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 10, false)
-	if err != nil {
-		fmt.Printf("Error when create and send normal tx %v\n", err)
-		return
+
+	for i := 0; i< 100; i++ {
+		i := i // create locals for closure below
+		fmt.Printf("i: %v\n", i)
+		go func(){
+			txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 10, false)
+			if err != nil {
+				fmt.Printf("Error when create and send normal tx %v\n", err)
+				return
+			}
+
+			fmt.Printf("Send tx successfully - TxID %v !!!", txID)
+		}()
 	}
 
-	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
 }
 
 func TestCreateAndSendTxRelayHeaderBlock(t *testing.T) {
@@ -34,8 +42,6 @@ func TestCreateAndSendTxRelayHeaderBlock(t *testing.T) {
 		fmt.Printf("Error when create and send tx relay bnb block %v\n", err)
 		return
 	}
-
-	fmt.Printf("cache after create tx: %v\n", GetUTXOCaches())
 
 	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
 }
