@@ -29,17 +29,18 @@ func (c *UTXOCache) SetUTXOCaches(utxoCache map[string]map[string]bool) {
 
 func GetUTXOCacheByPublicKey(publicKey []byte) map[string]bool {
 	utxoCaches.mux.Lock()
+	defer utxoCaches.mux.Unlock()
 	caches := utxoCaches.GetUTXOCaches()
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	if caches[publicKeyStr] == nil {
 		return map[string]bool{}
 	}
-	defer utxoCaches.mux.Unlock()
 	return caches[publicKeyStr]
 }
 
 func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) error {
 	utxoCaches.mux.Lock()
+	defer utxoCaches.mux.Unlock()
 	caches := utxoCaches.GetUTXOCaches()
 	newMap := map[string]bool{}
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
@@ -56,12 +57,12 @@ func AddUTXOsToCache(publicKey []byte, inputCoins []*crypto.InputCoin) error {
 	}
 	caches[publicKeyStr] = newMap
 	utxoCaches.SetUTXOCaches(caches)
-	defer utxoCaches.mux.Unlock()
 	return nil
 }
 
 func RemoveUTXOsFromCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 	utxoCaches.mux.Lock()
+	defer utxoCaches.mux.Unlock()
 	caches := utxoCaches.GetUTXOCaches()
 	newMap := map[string]bool{}
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
@@ -77,7 +78,6 @@ func RemoveUTXOsFromCache(publicKey []byte, inputCoins []*crypto.InputCoin) {
 	}
 	caches[publicKeyStr] = newMap
 	utxoCaches.SetUTXOCaches(caches)
-	defer utxoCaches.mux.Unlock()
 }
 
 func removeElementFromSlice(slice []*crypto.InputCoin, index int) []*crypto.InputCoin {
@@ -87,6 +87,7 @@ func removeElementFromSlice(slice []*crypto.InputCoin, index int) []*crypto.Inpu
 // remove utxo from cache when there is no the uxto in list unspent coins
 func CheckAndRemoveUTXOFromCache(publicKey []byte, utxos []*crypto.InputCoin) {
 	utxoCaches.mux.Lock()
+	defer utxoCaches.mux.Unlock()
 	caches := utxoCaches.GetUTXOCaches()
 	publicKeyStr := base58.Base58Check{}.Encode(publicKey, common.ZeroByte)
 	utxoCachesByPubKey := caches[publicKeyStr]
@@ -107,5 +108,4 @@ func CheckAndRemoveUTXOFromCache(publicKey []byte, utxos []*crypto.InputCoin) {
 		caches[publicKeyStr] = utxoCachesByPubKey
 		utxoCaches.SetUTXOCaches(caches)
 	}
-	defer utxoCaches.mux.Unlock()
 }
