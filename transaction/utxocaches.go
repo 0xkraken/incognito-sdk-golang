@@ -20,7 +20,14 @@ func (c *UTXOCache) GetUTXOCaches() map[string]map[string]bool {
 	if c == nil {
 		return map[string]map[string]bool{}
 	}
-	return c.Caches
+	newMap := map[string]map[string]bool{}
+	for publicKey, snMap := range c.Caches {
+		newMap[publicKey] = map[string]bool{}
+		for snStr := range snMap {
+			newMap[publicKey][snStr] = true
+		}
+	}
+	return newMap
 }
 
 func (c *UTXOCache) SetUTXOCaches(utxoCache map[string]map[string]bool) {
