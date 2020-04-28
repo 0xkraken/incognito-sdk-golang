@@ -1,7 +1,7 @@
 package transaction
 
 const (
-	DefaultFee = 20
+	DefaultFee = 57000000
 )
 
 
