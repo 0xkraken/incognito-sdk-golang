@@ -173,7 +173,7 @@ func GetBalancePRV(rpcClient *rpcclient.HttpClient, privateKeyStr string) (uint6
 	return balance, nil
 }
 
-func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTXOs int) error {
+func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTXOs int, fee uint64) error {
 	// key wallet
 	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
 	if err != nil {
@@ -216,7 +216,7 @@ func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTX
 			inputCoins := []*crypto.InputCoin{utxo}
 			tx := new(Tx)
 			tx, err = tx.InitWithSpecificUTXOs(
-				rpcClient, keyWallet, paymentInfos, DefaultFee / 2, false, nil, nil, txVersion, inputCoins)
+				rpcClient, keyWallet, paymentInfos, fee, false, nil, nil, txVersion, inputCoins)
 			if err != nil {
 				return err
 			}

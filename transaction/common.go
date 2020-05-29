@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"fmt"
 	"github.com/0xkraken/incognito-sdk-golang/common/base58"
 	"github.com/0xkraken/incognito-sdk-golang/rpcclient"
 	"math"
@@ -225,23 +226,67 @@ func GetListOutputCoins(rpcClient *rpcclient.HttpClient, paymentAddress string, 
 // to check output coins is spent or unspent
 func CheckExistenceSerialNumber(rpcClient *rpcclient.HttpClient, paymentAddressStr string, sns []*crypto.Point) ([]bool, error) {
 	var hasSerialNumberRes rpcclient.HasSerialNumberRes
+	result := make([]bool, 0)
 	snStrs := make([]interface{}, len(sns))
 	for i, sn := range sns {
 		snStrs[i] = base58.Base58Check{}.Encode(sn.ToBytesS(), common.Base58Version)
 	}
+
+	// divide request into small requests
+	//index1 := 0
+	//index2 := 0
+	//step := 10000
+	//for {
+	//	if step > len(snStrs) {
+	//		step = len(snStrs)
+	//	}
+	//	if index1 + step < len(snStrs) {
+	//		index2 = index1 + step
+	//	} else {
+	//		index2 = len(snStrs)
+	//	}
+	//	fmt.Printf("Index1 %v - index2 %v\n", index1, index2)
+	//	partSNs := make([]interface{}, index2 - index1)
+	//	copy(partSNs, snStrs[index1 : index2])
+	//	index1 = index2
+	//
+	//	var hasSerialNumberResPart rpcclient.HasSerialNumberRes
+	//	params := []interface{}{
+	//		paymentAddressStr,
+	//		partSNs,
+	//	}
+	//	err := rpcClient.RPCCall("hasserialnumbers", params, &hasSerialNumberResPart)
+	//	fmt.Printf("hasSerialNumberResPart.Result %v\n", hasSerialNumberResPart.Result)
+	//	if err != nil {
+	//		fmt.Printf("error CheckExistenceSerialNumber %v\n", err)
+	//		return nil, err
+	//	}
+	//	if hasSerialNumberResPart.RPCError != nil {
+	//		fmt.Printf("error CheckExistenceSerialNumber hasSerialNumberResPart.RPCError %v\n", hasSerialNumberResPart.RPCError)
+	//		return nil, errors.New(hasSerialNumberResPart.RPCError.Message)
+	//	}
+	//	result = append(result, hasSerialNumberResPart.Result...)
+	//
+	//	if index2 == len(snStrs) {
+	//		break
+	//	}
+	//}
 	params := []interface{}{
 		paymentAddressStr,
 		snStrs,
 	}
 	err := rpcClient.RPCCall("hasserialnumbers", params, &hasSerialNumberRes)
 	if err != nil {
+		fmt.Printf("error CheckExistenceSerialNumber %v\n", err)
 		return nil, err
 	}
 	if hasSerialNumberRes.RPCError != nil {
+		fmt.Printf("error CheckExistenceSerialNumber hasSerialNumberRes.RPCError %v\n", hasSerialNumberRes.RPCError)
 		return nil, errors.New(hasSerialNumberRes.RPCError.Message)
 	}
 
-	return hasSerialNumberRes.Result, nil
+	result = hasSerialNumberRes.Result
+	return result, nil
 }
 
 func DeriveSerialNumbers(privateKey *crypto.PrivateKey, outputCoins []*crypto.OutputCoin) ([]*crypto.Point, error) {

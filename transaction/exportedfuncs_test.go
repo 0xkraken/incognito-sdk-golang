@@ -7,27 +7,22 @@ import (
 )
 
 func TestCreateAndSendNormalTx(t *testing.T) {
-	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334 )
+	//rpcClient := rpcclient.NewHttpClient("", "http", "51.83.36.184", 9335)
 
-	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
+	rpcClient := rpcclient.NewHttpClient("https://test-node.incognito.org", "https", "test-node.incognito.org", 0)
+
+	privateKeyStr := "112t8rnXBS7jJ4iqFon5rM66ex1Fc7sstNrJA9iMKgNURMUf3rywYfJ4c5Kpxw1BgL1frj9Nu5uL5vpemn9mLUW25CD1w7khX88WdauTVyKa"
 	paymentInfoParams := map[string]uint64{
-		"12Rwz4HXkVABgRnSb5Gfu1FaJ7auo3fLNXVGFhxx1dSytxHpWhbkimT1Mv5Z2oCMsssSXTVsapY8QGBZd2J4mPiCTzJAtMyCzb4dDcy" : 1000 * 1e9,
+		"12S5pBBRDf1GqfRHouvCV86sWaHzNfvakAWpVMvNnWu2k299xWCgQzLLc9wqPYUHfMYGDprPvQ794dbi6UU1hfRN4tPiU61txWWenhC" : 1 * 1e9,
 	}
 
-	for i := 0; i< 100; i++ {
-		i := i // create locals for closure below
-		fmt.Printf("i: %v\n", i)
-		go func(){
-			txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 10, false)
-			if err != nil {
-				fmt.Printf("Error when create and send normal tx %v\n", err)
-				return
-			}
-
-			fmt.Printf("Send tx successfully - TxID %v !!!", txID)
-		}()
+	txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 10, false)
+	if err != nil {
+		fmt.Printf("Error when create and send normal tx %v\n", err)
+		return
 	}
 
+	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
 }
 
 func TestCreateAndSendTxRelayHeaderBlock(t *testing.T) {
@@ -82,7 +77,7 @@ func TestSplitUTXOs(t *testing.T) {
 	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334)
 	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
 
-	err := SplitUTXOs(rpcClient, privateKeyStr, 300)
+	err := SplitUTXOs(rpcClient, privateKeyStr, 300, 10)
 	if err != nil {
 		fmt.Printf("ERR: %v\n", err)
 	}
