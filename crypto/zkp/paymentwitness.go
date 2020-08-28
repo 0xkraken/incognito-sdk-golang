@@ -111,7 +111,8 @@ func (wit *PaymentWitness) Init(PaymentWitnessParam PaymentWitnessParam) *crypto
 	cmInputSK := crypto.PedCom.CommitAtIndex(wit.privateKey, randInputSK, crypto.PedersenPrivateKeyIndex)
 	wit.comInputSecretKey = new(crypto.Point).Set(cmInputSK)
 
-	randInputShardID := crypto.RandomScalar()
+	//randInputShardID := crypto.RandomScalar()
+	randInputShardID := crypto.FixedRandomnessShardID
 	senderShardID := common.GetShardIDFromLastByte(publicKeyLastByteSender)
 	wit.comInputShardID = crypto.PedCom.CommitAtIndex(new(crypto.Scalar).FromUint64(uint64(senderShardID)), randInputShardID, crypto.PedersenShardIDIndex)
 

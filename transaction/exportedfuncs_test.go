@@ -74,11 +74,31 @@ func TestGetBalancePRV(t *testing.T) {
 }
 
 func TestSplitUTXOs(t *testing.T) {
-	rpcClient := rpcclient.NewHttpClient("", "http", "127.0.0.1", 9334)
-	privateKeyStr := "112t8rnjeorQyyy36Vz5cqtfQNoXuM7M2H92eEvLWimiAtnQCSZiP2HXpMW7mECSRXeRrP8yPwxKGuziBvGVfmxhQJSt2KqHAPZvYmM1ZKwR"
+	rpcClient := rpcclient.NewHttpClient("https://testnet.incognito.org/fullnode", "http", "51.83.36.184", 20001)
+	privateKeyStr := "112t8rotQK6gW8mCj9ehxhZqavGoLU8VZj8us4LyfjXosBKsGQ3eRUVaFr6Js1UAD6E7cuh2ZZE7EWnfYZbD567j8uVvXHY1LamyRE7Aw27i"
 
 	err := SplitUTXOs(rpcClient, privateKeyStr, 300, 10)
 	if err != nil {
 		fmt.Printf("ERR: %v\n", err)
 	}
+}
+
+func TestABC(t *testing.T) {
+	rpcClient := rpcclient.NewHttpClient("", "http", "51.83.36.184", 9334)
+	//http://51.83.36.184:9334
+
+	//rpcClient := rpcclient.NewHttpClient("https://test-node.incognito.org", "https", "test-node.incognito.org", 0)
+
+	privateKeyStr := "112t8roafGgHL1rhAP9632Yef3sx5k8xgp8cwK4MCJsCL1UWcxXvpzg97N4dwvcD735iKf31Q2ZgrAvKfVjeSUEvnzKJyyJD3GqqSZdxN4or"
+	paymentInfoParams := map[string]uint64{
+		"12RuEdPjq4yxivzm8xPxRVHmkL74t4eAdUKPdKKhMEnpxPH3k8GEyULbwq4hjwHWmHQr7MmGBJsMpdCHsYAqNE18jipWQwciBf9yqvQ" : 1,
+	}
+
+	txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 2, false)
+	if err != nil {
+		fmt.Printf("Error when create and send normal tx %v\n", err)
+		return
+	}
+
+	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
 }
