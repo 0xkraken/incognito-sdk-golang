@@ -17,3 +17,5 @@ const (
 )
 
 const MaxSizeInfo = 512
+
+const MinValueUTXOForSplitting = 100  // nano

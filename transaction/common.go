@@ -336,6 +336,12 @@ func GetUnspentOutputCoins(rpcClient *rpcclient.HttpClient, keyWallet *wallet.Ke
 
 // GetUnspentOutputCoins return utxos of an account
 func GetUnspentOutputCoinsExceptSpendingUTXO(rpcClient *rpcclient.HttpClient, keyWallet *wallet.KeyWallet) ([]*crypto.InputCoin, error) {
+	publicKey := keyWallet.KeySet.PaymentAddress.Pk
+
+	// check and remove utxo cache (these utxos in txs that were confirmed)
+	//CheckAndRemoveUTXOFromCache(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
+	CheckAndRemoveUTXOFromCacheV2(keyWallet.KeySet.PaymentAddress.Pk, rpcClient)
+
 	// get unspent output coins from network
 	utxos, err := GetUnspentOutputCoins(rpcClient, keyWallet)
 	if err != nil {
@@ -343,11 +349,7 @@ func GetUnspentOutputCoinsExceptSpendingUTXO(rpcClient *rpcclient.HttpClient, ke
 	}
 	inputCoins := ConvertOutputCoinToInputCoin(utxos)
 
-	// check and remove utxo cache (these utxos in txs that were confirmed)
-	CheckAndRemoveUTXOFromCache(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
-
 	// except spending utxos from unspent output coins
-	publicKey := keyWallet.KeySet.PaymentAddress.Pk
 	utxosInCache := GetUTXOCacheByPublicKey(publicKey)
 	for serialNumberStr, _ := range utxosInCache {
 		for i, inputCoin := range inputCoins {
@@ -468,6 +470,22 @@ func NewExchangeRateFromParam(params map[string]uint64) ([]*metadata.ExchangeRat
 	}
 
 	return result, nil
+}
+
+// GetListOutputCoins calls Incognito RPC to get all output coins of the account
+func GetTxByHash(rpcClient *rpcclient.HttpClient, txID string) (*rpcclient.TransactionDetail, error) {
+	var txByHashRes rpcclient.GetTxByHashRes
+	params := []interface{}{
+		txID,
+	}
+	err := rpcClient.RPCCall("gettransactionbyhash", params, &txByHashRes)
+	if err != nil {
+		return nil, err
+	}
+	if txByHashRes.RPCError != nil {
+		return nil, errors.New(txByHashRes.RPCError.Message)
+	}
+	return txByHashRes.Result, nil
 }
 
 

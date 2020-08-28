@@ -3,6 +3,7 @@ package transaction
 import (
 	"fmt"
 	"github.com/0xkraken/incognito-sdk-golang/rpcclient"
+	"github.com/0xkraken/incognito-sdk-golang/wallet"
 	"testing"
 )
 
@@ -74,31 +75,38 @@ func TestGetBalancePRV(t *testing.T) {
 }
 
 func TestSplitUTXOs(t *testing.T) {
-	rpcClient := rpcclient.NewHttpClient("https://testnet.incognito.org/fullnode", "http", "51.83.36.184", 20001)
-	privateKeyStr := "112t8rotQK6gW8mCj9ehxhZqavGoLU8VZj8us4LyfjXosBKsGQ3eRUVaFr6Js1UAD6E7cuh2ZZE7EWnfYZbD567j8uVvXHY1LamyRE7Aw27i"
+	rpcClient := rpcclient.NewHttpClient("https://testnet.incognito.org/fullnode", "", "", 0)
+	privateKeyStr := "112t8ro7pMYM2gzUyQ8uCvm3R6qWj8rVp8V7PQJzYvbLvSLpxtr27WGxH7FUD3J36yvQpE51NE4pSnhMprN5dsvn3bQeAXa9Tr4Y6EENEgAw"
 
-	err := SplitUTXOs(rpcClient, privateKeyStr, 300, 10)
+	err := SplitUTXOs(rpcClient, privateKeyStr, 100, 5)
 	if err != nil {
 		fmt.Printf("ERR: %v\n", err)
 	}
 }
 
-func TestABC(t *testing.T) {
-	rpcClient := rpcclient.NewHttpClient("", "http", "51.83.36.184", 9334)
-	//http://51.83.36.184:9334
+func TestCacheUTXO(t *testing.T) {
+	rpcClient := rpcclient.NewHttpClient("https://testnet.incognito.org/fullnode", "", "", 0)
 
-	//rpcClient := rpcclient.NewHttpClient("https://test-node.incognito.org", "https", "test-node.incognito.org", 0)
-
-	privateKeyStr := "112t8roafGgHL1rhAP9632Yef3sx5k8xgp8cwK4MCJsCL1UWcxXvpzg97N4dwvcD735iKf31Q2ZgrAvKfVjeSUEvnzKJyyJD3GqqSZdxN4or"
+	privateKeyStr := "112t8rotQK6gW8mCj9ehxhZqavGoLU8VZj8us4LyfjXosBKsGQ3eRUVaFr6Js1UAD6E7cuh2ZZE7EWnfYZbD567j8uVvXHY1LamyRE7Aw27i"
+	keyWallet, _ := wallet.Base58CheckDeserialize(privateKeyStr)
+	keyWallet.KeySet.InitFromPrivateKeyByte(keyWallet.KeySet.PrivateKey)
 	paymentInfoParams := map[string]uint64{
-		"12RuEdPjq4yxivzm8xPxRVHmkL74t4eAdUKPdKKhMEnpxPH3k8GEyULbwq4hjwHWmHQr7MmGBJsMpdCHsYAqNE18jipWQwciBf9yqvQ" : 1,
+		"12RzYh5dgNw5pgkPUdibWJLZHSWjdqnKuvN9GREkZRXeryEuZq8JfcmgoRbb9mm3DWjxEw8nBS7K7xmhuKJn8hFiLZ87dfFToEZZSdX" : 10,
 	}
 
-	txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 2, false)
-	if err != nil {
-		fmt.Printf("Error when create and send normal tx %v\n", err)
-		return
-	}
+	for i := 0; i < 100; i++ {
+		fmt.Println("====== Init tx ", i, " ======")
+		beforeCache := GetUTXOCacheByPublicKey(keyWallet.KeySet.PaymentAddress.Pk)
+		fmt.Printf("beforeCache: %v - %v\n", len(beforeCache), beforeCache)
+		txID, err := CreateAndSendNormalTx(rpcClient, privateKeyStr, paymentInfoParams, 5, false)
+		if err != nil {
+			fmt.Printf("Error when create and send normal tx %v\n", err)
+			return
+		}
+		fmt.Printf("Send tx successfully - TxID %v !!!\n", txID)
 
-	fmt.Printf("Send tx successfully - TxID %v !!!", txID)
+		afterCache := GetUTXOCacheByPublicKey(keyWallet.KeySet.PaymentAddress.Pk)
+		fmt.Printf("afterCache: %v - %v\n", len(afterCache), afterCache)
+		fmt.Println("====== End tx ", i, " ======")
+	}
 }

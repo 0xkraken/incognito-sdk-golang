@@ -3,6 +3,8 @@ package transaction
 import (
 	"errors"
 	"fmt"
+	"github.com/0xkraken/incognito-sdk-golang/common"
+	"github.com/0xkraken/incognito-sdk-golang/common/base58"
 	"github.com/0xkraken/incognito-sdk-golang/crypto"
 	"github.com/0xkraken/incognito-sdk-golang/metadata"
 	"github.com/0xkraken/incognito-sdk-golang/rpcclient"
@@ -42,6 +44,8 @@ func CreateAndSendNormalTx(rpcClient *rpcclient.HttpClient, privateKeyStr string
 		return "", err
 	}
 
+	tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, tx.Proof.GetInputCoins())
+
 	return txID, nil
 }
 
@@ -76,6 +80,8 @@ func CreateAndSendTxRelayBNBHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 		return "", err
 	}
 
+	tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, tx.Proof.GetInputCoins())
+
 	return txID, nil
 }
 
@@ -109,6 +115,8 @@ func CreateAndSendTxRelayBTCHeader(rpcClient *rpcclient.HttpClient, privateKeySt
 		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
+
+	tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, tx.Proof.GetInputCoins())
 
 	return txID, nil
 }
@@ -148,6 +156,8 @@ func CreateAndSendTxPortalExchangeRate(rpcClient *rpcclient.HttpClient, privateK
 		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
 		return "", err
 	}
+
+	tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, tx.Proof.GetInputCoins())
 
 	return txID, nil
 }
@@ -206,6 +216,12 @@ func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTX
 
 		// for each utxo, divide the utxo into two utxos
 		for _, utxo := range utxos {
+			// skip utxos that have value less than MinValueUTXOForSplitting
+			if utxo.CoinDetails.GetValue() < MinValueUTXOForSplitting {
+				fmt.Printf("There is a utxo has value less than %v - coin commitment %v\n", MinValueUTXOForSplitting, base58.Base58Check{}.Encode(utxo.CoinDetails.GetCoinCommitment().ToBytesS(), common.ZeroByte))
+				continue
+			}
+
 			paymentInfos := []*crypto.PaymentInfo{
 				{
 					PaymentAddress: keyWallet.KeySet.PaymentAddress,
@@ -226,8 +242,9 @@ func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTX
 			if err != nil {
 				return err
 			}
+
 			// cache utxos for this transaction
-			tx.CacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
+			tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, inputCoins)
 			fmt.Printf("Split uxto with txID : %v\n", txID)
 		}
 	}

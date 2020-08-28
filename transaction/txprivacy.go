@@ -403,7 +403,11 @@ func (tx *Tx) Send(rpcClient *rpcclient.HttpClient) (string, error) {
 }
 
 func (tx *Tx) CacheUTXOs(publicKey []byte, inputCoins []*crypto.InputCoin) error {
-	return AddUTXOsToCache(publicKey, inputCoins)
+	return AddUTXOsToCache(publicKey, "TxID", inputCoins)
+}
+
+func (tx *Tx) UpdateCacheUTXOsWithTxID(publicKey []byte, inputCoins []*crypto.InputCoin) error {
+	return UpdateUTXOsCacheWithTxID(publicKey, tx.Hash().String(), inputCoins)
 }
 
 func (tx *Tx) UnCacheUTXOs(publicKey []byte) {
