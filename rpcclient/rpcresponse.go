@@ -35,3 +35,8 @@ type SendRawTxRes struct {
 	RPCBaseRes
 	Result *CreateTransactionResult
 }
+
+type GetTxByHashRes struct {
+	RPCBaseRes
+	Result *TransactionDetail
+}
