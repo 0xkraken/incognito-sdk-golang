@@ -188,26 +188,21 @@ func (pro *SNNoPrivacyProof) SetBytes(bytes []byte) error {
 func (wit SNNoPrivacyWitness) Prove(mess []byte) (*SNNoPrivacyProof, error) {
 	// randomness
 	eSK := crypto.RandomScalar()
-
 	// calculate tSeed = g_SK^eSK
 	tSK := new(crypto.Point).ScalarMult(crypto.PedCom.G[crypto.PedersenPrivateKeyIndex], eSK)
-
 	// calculate tOutput = sn^eSK
 	tE := new(crypto.Point).ScalarMult(wit.stmt.output, eSK)
-
 	x := new(crypto.Scalar)
 	if mess == nil {
 		// calculate x = hash(tSeed || tInput || tSND2 || tOutput)
 		// recheck frombytes is valid scalar
-		x = utils.GenerateChallenge([][]byte{tSK.ToBytesS(), tE.ToBytesS()})
+		x = utils.GenerateChallenge([][]byte{wit.stmt.output.ToBytesS(), wit.stmt.vKey.ToBytesS(), tSK.ToBytesS(), tE.ToBytesS()})
 	} else {
 		x.FromBytesS(mess)
 	}
-
 	// Calculate zSeed = SK * x + eSK
 	zSK := new(crypto.Scalar).Mul(wit.seed, x)
 	zSK.Add(zSK, eSK)
-
 	proof := new(SNNoPrivacyProof).Init()
 	proof.Set(wit.stmt.output, wit.stmt.vKey, wit.stmt.input, tSK, tE, zSK)
 	return proof, nil
@@ -218,33 +213,26 @@ func (pro SNNoPrivacyProof) Verify(mess []byte) (bool, error) {
 	x := new(crypto.Scalar)
 	if mess == nil {
 		// calculate x = hash(tSeed || tInput || tSND2 || tOutput)
-		x = utils.GenerateChallenge([][]byte{pro.tSeed.ToBytesS(), pro.tOutput.ToBytesS()})
+		x = utils.GenerateChallenge([][]byte{pro.stmt.output.ToBytesS(), pro.stmt.vKey.ToBytesS(), pro.tSeed.ToBytesS(), pro.tOutput.ToBytesS()})
 	} else {
 		x.FromBytesS(mess)
 	}
-
 	// Check gSK^zSeed = vKey^x * tSeed
 	leftPoint1 := new(crypto.Point).ScalarMult(crypto.PedCom.G[crypto.PedersenPrivateKeyIndex], pro.zSeed)
-
 	rightPoint1 := new(crypto.Point).ScalarMult(pro.stmt.vKey, x)
 	rightPoint1 = rightPoint1.Add(rightPoint1, pro.tSeed)
-
 	if !crypto.IsPointEqual(leftPoint1, rightPoint1) {
 		fmt.Errorf("verify serial number no privacy proof statement 1 failed")
 		return false, errors.New("verify serial number no privacy proof statement 1 failed")
 	}
-
 	// Check sn^(zSeed + x*input) = gSK^x * tOutput
 	tmp := new(crypto.Scalar).Add(pro.zSeed, new(crypto.Scalar).Mul(x, pro.stmt.input))
 	leftPoint2 := new(crypto.Point).ScalarMult(pro.stmt.output, tmp)
-
-	rightPoint2 := new (crypto.Point).ScalarMult(crypto.PedCom.G[crypto.PedersenPrivateKeyIndex], x)
+	rightPoint2 := new(crypto.Point).ScalarMult(crypto.PedCom.G[crypto.PedersenPrivateKeyIndex], x)
 	rightPoint2 = rightPoint2.Add(rightPoint2, pro.tOutput)
-
 	if !crypto.IsPointEqual(leftPoint2, rightPoint2) {
 		fmt.Errorf("verify serial number no privacy proof statement 2 failed")
 		return false, errors.New("verify serial number no privacy proof statement 2 failed")
 	}
-
 	return true, nil
 }

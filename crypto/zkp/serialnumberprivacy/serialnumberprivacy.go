@@ -252,52 +252,44 @@ func (proof *SNPrivacyProof) SetBytes(bytes []byte) error {
 }
 
 func (wit SNPrivacyWitness) Prove(mess []byte) (*SNPrivacyProof, error) {
-
 	eSK := crypto.RandomScalar()
 	eSND := crypto.RandomScalar()
 	dSK := crypto.RandomScalar()
 	dSND := crypto.RandomScalar()
-
 	// calculate tSeed = g_SK^eSK * h^dSK
 	tSeed := crypto.PedCom.CommitAtIndex(eSK, dSK, crypto.PedersenPrivateKeyIndex)
-
 	// calculate tSND = g_SND^eSND * h^dSND
 	tInput := crypto.PedCom.CommitAtIndex(eSND, dSND, crypto.PedersenSndIndex)
-
 	// calculate tSND = g_SK^eSND * h^dSND2
 	tOutput := new(crypto.Point).ScalarMult(wit.stmt.sn, new(crypto.Scalar).Add(eSK, eSND))
-
 	// calculate x = hash(tSeed || tInput || tSND2 || tOutput)
 	x := new(crypto.Scalar)
 	if mess == nil {
 		x = utils.GenerateChallenge([][]byte{
+			wit.stmt.sn.ToBytesS(),
+			wit.stmt.comSK.ToBytesS(),
 			tSeed.ToBytesS(),
 			tInput.ToBytesS(),
 			tOutput.ToBytesS()})
 	} else {
 		x.FromBytesS(mess)
 	}
-
 	// Calculate zSeed = sk * x + eSK
 	zSeed := new(crypto.Scalar).Mul(wit.sk, x)
 	zSeed.Add(zSeed, eSK)
 	//zSeed.Mod(zSeed, crypto.Curve.Params().N)
-
 	// Calculate zRSeed = rSK * x + dSK
 	zRSeed := new(crypto.Scalar).Mul(wit.rSK, x)
 	zRSeed.Add(zRSeed, dSK)
 	//zRSeed.Mod(zRSeed, crypto.Curve.Params().N)
-
 	// Calculate zInput = input * x + eSND
 	zInput := new(crypto.Scalar).Mul(wit.input, x)
 	zInput.Add(zInput, eSND)
 	//zInput.Mod(zInput, crypto.Curve.Params().N)
-
 	// Calculate zRInput = rInput * x + dSND
 	zRInput := new(crypto.Scalar).Mul(wit.rInput, x)
 	zRInput.Add(zRInput, dSND)
 	//zRInput.Mod(zRInput, crypto.Curve.Params().N)
-
 	proof := new(SNPrivacyProof).Init()
 	proof.Set(wit.stmt, tSeed, tInput, tOutput, zSeed, zRSeed, zInput, zRInput)
 	return proof, nil
@@ -308,45 +300,37 @@ func (proof SNPrivacyProof) Verify(mess []byte) (bool, error) {
 	x := new(crypto.Scalar)
 	if mess == nil {
 		x = utils.GenerateChallenge([][]byte{
+			proof.stmt.sn.ToBytesS(),
+			proof.stmt.comSK.ToBytesS(),
 			proof.tSK.ToBytesS(),
 			proof.tInput.ToBytesS(),
 			proof.tSN.ToBytesS()})
 	} else {
 		x.FromBytesS(mess)
 	}
-
 	// Check gSND^zInput * h^zRInput = input^x * tInput
 	leftPoint1 := crypto.PedCom.CommitAtIndex(proof.zInput, proof.zRInput, crypto.PedersenSndIndex)
-
 	rightPoint1 := new(crypto.Point).ScalarMult(proof.stmt.comInput, x)
 	rightPoint1.Add(rightPoint1, proof.tInput)
-
 	if !crypto.IsPointEqual(leftPoint1, rightPoint1) {
 		fmt.Errorf("verify serial number privacy proof statement 1 failed")
 		return false, errors.New("verify serial number privacy proof statement 1 failed")
 	}
-
 	// Check gSK^zSeed * h^zRSeed = vKey^x * tSeed
 	leftPoint2 := crypto.PedCom.CommitAtIndex(proof.zSK, proof.zRSK, crypto.PedersenPrivateKeyIndex)
-
 	rightPoint2 := new(crypto.Point).ScalarMult(proof.stmt.comSK, x)
 	rightPoint2.Add(rightPoint2, proof.tSK)
-
 	if !crypto.IsPointEqual(leftPoint2, rightPoint2) {
 		fmt.Errorf("verify serial number privacy proof statement 2 failed")
 		return false, errors.New("verify serial number privacy proof statement 2 failed")
 	}
-
 	// Check sn^(zSeed + zInput) = gSK^x * tOutput
 	leftPoint3 := new(crypto.Point).ScalarMult(proof.stmt.sn, new(crypto.Scalar).Add(proof.zSK, proof.zInput))
-
 	rightPoint3 := new(crypto.Point).ScalarMult(crypto.PedCom.G[crypto.PedersenPrivateKeyIndex], x)
 	rightPoint3.Add(rightPoint3, proof.tSN)
-
 	if !crypto.IsPointEqual(leftPoint3, rightPoint3) {
-		fmt.Errorf("verify serial number privacy proof statement 3 failed")
+		//crypto.Logger.Log.Errorf("verify serial number privacy proof statement 3 failed")
 		return false, errors.New("verify serial number privacy proof statement 3 failed")
 	}
-
 	return true, nil
 }
