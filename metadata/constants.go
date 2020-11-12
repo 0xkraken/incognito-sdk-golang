@@ -38,6 +38,12 @@ const (
 	//PDEWithdrawalRequestMeta    = 93
 	//PDEWithdrawalResponseMeta   = 94
 	//PDEContributionResponseMeta = 95
+	PDEPRVRequiredContributionRequestMeta = 204
+	PDECrossPoolTradeRequestMeta          = 205
+	PDECrossPoolTradeResponseMeta         = 206
+	PDEFeeWithdrawalRequestMeta           = 207
+	PDEFeeWithdrawalResponseMeta          = 208
+	PDETradingFeesDistributionMeta        = 209
 
 	// portal
 	PortalCustodianDepositMeta                 = 100

@@ -249,3 +249,60 @@ func SplitUTXOs(rpcClient *rpcclient.HttpClient, privateKeyStr string, minNumUTX
 		}
 	}
 }
+
+// sell 
+func CreateAndSendTxPRVCrossPoolTrade(
+	rpcClient *rpcclient.HttpClient,
+	privateKeyStr string,
+	tokenIDToBuyStr string,
+	sellAmount uint64,
+	minAcceptableAmount uint64,
+	tradingFee uint64,
+	networkFee uint64) (string, error) {
+	// create sender private key from private key string
+	keyWallet, err := wallet.Base58CheckDeserialize(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("Can not deserialize priavte key %v\n", err)
+	}
+	err = keyWallet.KeySet.InitFromPrivateKey(&keyWallet.KeySet.PrivateKey)
+	if err != nil {
+		return "", errors.New("sender private key is invalid")
+	}
+	paymentAddrStr := keyWallet.Base58CheckSerialize(wallet.PaymentAddressType)
+
+	// burning address
+	burningAddrWallet, _ := wallet.Base58CheckDeserialize(common.BurningAddress)
+	burningAddr := burningAddrWallet.KeySet.PaymentAddress
+
+	// create metadata
+	meta, _ := metadata.NewPDECrossPoolTradeRequest(
+		tokenIDToBuyStr, common.PRVIDStr, sellAmount, minAcceptableAmount, tradingFee, paymentAddrStr, metadata.PDECrossPoolTradeRequestMeta)
+
+	// create payment info
+	paymentInfos := []*crypto.PaymentInfo{
+		{
+			PaymentAddress: burningAddr,
+			Amount:         sellAmount + tradingFee,
+			Message:        nil,
+		},
+	}
+
+	// create tx
+	tx := new(Tx)
+	tx, err = tx.Init(
+		rpcClient, keyWallet, paymentInfos, networkFee, false, meta, nil, txVersion)
+	if err != nil {
+		return "", err
+	}
+
+	// send tx
+	txID, err := tx.Send(rpcClient)
+	if err != nil {
+		tx.UnCacheUTXOs(keyWallet.KeySet.PaymentAddress.Pk)
+		return "", err
+	}
+
+	tx.UpdateCacheUTXOsWithTxID(keyWallet.KeySet.PaymentAddress.Pk, tx.Proof.GetInputCoins())
+
+	return txID, nil
+}
