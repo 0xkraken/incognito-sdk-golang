@@ -344,7 +344,9 @@ func (tx *Tx) InitWithSpecificUTXOs (
 	}
 
 	// sign tx
+	//tx.PubKeyLastByteSender = common.GetShardIDFromLastByte(pkLastByteSender)
 	tx.PubKeyLastByteSender = pkLastByteSender
+	fmt.Println("tx.PubKeyLastByteSender: ", tx.PubKeyLastByteSender)
 	err = tx.SignTx(sigPrivKey)
 	if err != nil {
 		return nil, err

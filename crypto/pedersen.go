@@ -22,6 +22,8 @@ type PedersenCommitment struct {
 	// G[4]: Randomness
 }
 
+var GBase, HBase *Point
+
 func newPedersenParams() PedersenCommitment {
 	var pcm PedersenCommitment
 	const capacity = 5 // fixed value = 5
@@ -31,6 +33,9 @@ func newPedersenParams() PedersenCommitment {
 	for i := 1; i < len(pcm.G); i++ {
 		pcm.G[i] = HashToPointFromIndex(int64(i), CStringBulletProof)
 	}
+
+	GBase = new(Point).Set(pcm.G[1])
+	HBase = new(Point).Set(pcm.G[4])
 	return pcm
 }
 

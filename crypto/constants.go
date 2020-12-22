@@ -18,6 +18,14 @@ const (
 )
 
 const (
+	NumBase               = 5
+	MaxExp                = 64
+	MaxOutputCoin         = 32
+	MaxInputCoin          = 32
+	MaxOutputNumberParam  = 256
+)
+
+const (
 	MaxSizeInfoCoin = 255  // byte
 )
 
